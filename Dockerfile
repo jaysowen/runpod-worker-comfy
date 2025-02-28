@@ -32,6 +32,33 @@ RUN /usr/bin/yes | comfy --workspace /comfyui install --cuda-version 11.8 --nvid
 # Change working directory to ComfyUI
 WORKDIR /comfyui
 
+# 1. Clone custom nodes repositories
+RUN cd ComfyUI/custom_nodes && \
+    git clone https://github.com/ltdrdata/ComfyUI-Impact-Pack.git && \
+    git clone https://github.com/chflame163/ComfyUI_LayerStyle.git && \
+    git clone https://github.com/kijai/ComfyUI-Florence2.git && \
+    git clone https://github.com/cubiq/ComfyUI_essentials.git && \
+    git clone https://github.com/un-seen/comfyui-tensorops.git && \
+    git clone https://github.com/rgthree/rgthree-comfy.git && \
+    git clone https://github.com/kijai/ComfyUI-segment-anything-2.git && \
+    git clone https://github.com/lquesada/ComfyUI-Inpaint-CropAndStitch.git
+
+# 2. Automatically search and install requirements.txt files
+RUN find ComfyUI/custom_nodes -name "requirements.txt" -exec pip install --no-cache-dir -r {} \;
+
+# 3. Automatically search and run install.py scripts
+RUN for script in ComfyUI/custom_nodes/*/install.py; do \
+        [ -f "$script" ] && python "$script"; \
+    done
+
+# Ensure some directories are created in advance
+RUN mkdir -p /comfy-checkpoints /comfy-upscale_models /workspace/ComfyUI /workspace/logs /workspace/venv
+
+# Download Models
+RUN wget -q https://huggingface.co/personal1802/NTRMIXillustrious-XLNoob-XL4.0/resolve/main/ntrMIXIllustriousXL_v40.safetensors -P /comfy-checkpoints
+RUN wget -q https://huggingface.co/Kim2091/AnimeSharpV3/resolve/main/2x-AnimeSharpV3.pth -P /comfy-upscale_models
+RUN wget -q https://huggingface.co/Kim2091/AnimeSharp/resolve/main/4x-AnimeSharp.pth -P /comfy-upscale_models
+
 # Install runpod
 RUN pip install runpod requests
 
